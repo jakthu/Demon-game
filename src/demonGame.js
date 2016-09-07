@@ -203,46 +203,98 @@ var warlordHP = 6;
 var archerHP = 7;
 var paladinHP = 8;
 
-function Unit(hp, inabilities, tilesheetlocation, inid)
+var test = function()
 {
-	var HP = hp;
-	var abilities = inabilities;
-	var icon = Object.create(spriteObject);
-			
-            icon.sourceX = Math.floor((tilesheetlocation - 1) % tilesheetColumns) * SIZE;
-            icon.sourceY = Math.floor((tilesheetlocation - 1) / tilesheetColumns) * SIZE;
-            //icon.x = column * SIZE;
-            //icon.y = row * SIZE;
-            //sprites.push(object);
-	var id = inid;
+	string = "hello";
 }
 
+var Unit = function(hp, abilities, tilesheetlocation, column, row, id, name)
+{
+	this.hp = hp;
+	this.abilities = abilities;
+	this.icon = Object.create(spriteObject);
+    this.icon.sourceX = Math.floor((tilesheetlocation - 1) % tilesheetColumns) * SIZE;
+    this.icon.sourceY = Math.floor((tilesheetlocation - 1) / tilesheetColumns) * SIZE;
+    this.icon.x = column * SIZE;
+    this.icon.y = row * SIZE;
+            //sprites.push(object);
+	this.id = id;
+	this.name = name;
+}
 
+Unit.prototype.getHP = function() 
+{
+	return this.hp;
+};
+
+Unit.prototype.getIcon = function()
+{
+	return this.icon;
+}
+
+Unit.prototype.getName = function()
+{
+	return this.name;
+}
+
+/*
+	var Person = function (Name) {
+		console.log("new person");
+		this.firstName = Name;
+	};
+
+	Person.prototype.sayHello = function() {
+		console.log("Hello, I'm " + this.firstName);
+	};
+
+	var person1 = new Person("Alice");
+	var person2 = new Person("Bob");
+	var helloFunction = person1.sayHello;
+	
+	console.log(person1.sayHello());
+*/
+	
 	var units = [];
-	var wIZARD = new Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 5, 1);
+	var eMPTY = new Unit(0, {}, 0, 0, 0, 0, "Empty");
+	units.push(eMPTY);
+	var wIZARD = new Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 5, 0, 4, 1, "Wizard");
 	units.push(wIZARD);
-	var wARLORD = Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 5, 2);
+	var wARLORD = new Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 6, 1, 4, 2, "Warlord");
 	units.push(wARLORD);
-	var aRCHER = Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 5, 3);
+	var aRCHER = new Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 7, 0, 5, 3, "Archer");
 	units.push(aRCHER);
-	var pALADIN = Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 5, 4);
+	var pALADIN = new Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 8, 1, 5, 4, "Paladin");
 	units.push(pALADIN);
+	//console.log(wIZARD.getHP());
+	
+	//var tester = new test();
+	//console.log(tester.string);
+	//console.log("hello " + units[0].string);
+	//console.log("HP " + wARLORD.hp);
+	//console.log("length" + units.push());
 
 
 
 function initialClick(event)
 {
 	console.log("Initial click");
-	Test();
+	//Test();
 	
 	initialX = Math.floor((event.pageX - canvas.offsetLeft)/64);
 	initialY = Math.floor((event.pageY - canvas.offsetTop)/64);
+	var occupant = gameObjects[initialY][initialX];
 	
-	console.log(initialX);
-	console.log(initialY);
+	console.log(initialX + "," + initialY + " - " + units[occupant].getName());
+	//console.log(initialY);
 	
 	//var id = gameObjects[y][x];
-	//map[11][1] = unitarray[id].abilities[1];
+	if(occupant != 0)
+	{
+		map[11][1] = units[gameObjects[initialY][initialX]-1].abilities[0];
+		map[11][2] = units[gameObjects[initialY][initialX]-1].abilities[1];
+		map[11][3] = units[gameObjects[initialY][initialX]-1].abilities[2];
+		map[11][4] = units[gameObjects[initialY][initialX]-1].abilities[3];
+	}
 /* 	switch(gameObjects[initialY][initialX])
 	{
     case WIZARD:
@@ -415,10 +467,13 @@ function buildUnitMap()
     { 
 		if(gameObjects[row][column] != 0)
 		{
-			console.log(row);
-			console.log(column);
-			console.log(gameObjects[row][column]);
-			sprites.push(units[gameObjects[row][column]-1].icon);
+			//console.log()
+			//console.log(row);
+			//console.log(column);
+			//console.log(units[0].string);
+			//console.log(units[gameObjects[row][column]].string);
+			
+			sprites.push(units[gameObjects[row][column]-1].getIcon());
 		}
 	}
   }
