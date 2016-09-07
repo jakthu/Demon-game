@@ -1,4 +1,6 @@
 (function(){
+	
+	console.log("- - - - - - - - start - - - - - - - -"); //////////////////////////////////
 
 //The canvas
 var canvas = document.querySelector("canvas"); 
@@ -40,8 +42,8 @@ var gameObjects =/*
 	  [0,0,0,0,0,0,0,0,0,0,0],	//this line has values for HP and 4 skill boxes
 	  [0,0,0,0,0,0,0,0,0,0,0]	//this line has all 0's, prints skill description
 ];*/
-[
-  [0,0,0,0,0,0,0,0,0,0,0],
+[ 
+  [0,0,0,0,0,0,0,0,0,0,0], //gameObjects holds the ids of each unit
   [0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0],
@@ -98,21 +100,25 @@ var FIREBALL = 11; //pic for 1st wizard skill
 var FROSTBOLT = 12; //pic for 2nd wiz skill
 var CHAINL = 13;
 var TELE = 14;
+var WIZ_ABILITIES = [FIREBALL, FROSTBOLT, CHAINL, TELE];
 
 var RAGE = 15;
 var SLASH = 16;
 var ANNIHILATE = 17;
 var BASH = 18;
+var WAR_ABILITIES = [RAGE, SLASH, ANNIHILATE, BASH];
 
 var PA = 19;
 var CA = 20;
 var HS = 21;
 var POISON = 22;
+var ARC_ABILITIES = [PA, CA, HS, POISON];
 
 var SMITE = 23;
 var TAUNT = 24;
 var HEAL = 25;
 var THORNS = 26;
+var PAL_ABILITIES = [SMITE, TAUNT, HEAL, THORNS];
 //etc for other 2 skills and all 4 for each other unit.....
 //WAR_INFO = ;
 //ARC_INFO = ;
@@ -133,7 +139,7 @@ var ROWS = map.length;
 var COLUMNS = map[0].length;
 
 //The number of columns on the tilesheet
-var tilesheetColumns = 4;
+var TILESHEET_COLUMNS = 4;
 
 //Sprites we need to access by name
 var alien = null;
@@ -208,55 +214,127 @@ var test = function()
 	string = "hello";
 }
 
-var Unit = function(hp, abilities, tilesheetlocation, column, row, id, name)
+function Unit(hp, abilities, tilesheetlocation, xpos, ypos, id, name)
 {
 	this.hp = hp;
 	this.abilities = abilities;
-	this.icon = Object.create(spriteObject);
-    this.icon.sourceX = Math.floor((tilesheetlocation - 1) % tilesheetColumns) * SIZE;
-    this.icon.sourceY = Math.floor((tilesheetlocation - 1) / tilesheetColumns) * SIZE;
-    this.icon.x = column * SIZE;
-    this.icon.y = row * SIZE;
+	//console.log(abilities[0]);
+	this.xpos = xpos;
+	this.ypos - ypos;
+	this.icon = iconFromTilesheet(tilesheetlocation);/*Object.create(spriteObject);
+    this.icon.sourceX = Math.floor((tilesheetlocation - 1) % TILESHEET_COLUMNS) * SIZE;
+    this.icon.sourceY = Math.floor((tilesheetlocation - 1) / TILESHEET_COLUMNS) * SIZE;*/
+    //this.icon.x = column * SIZE; //the location of the icon needs to change whenever the unit is moved !!!!!the icon position only needs to be changed when the icon is being drawn
+    //this.icon.y = row * SIZE;
             //sprites.push(object);
 	this.id = id;
 	this.name = name;
-}
-
-Unit.prototype.getHP = function() 
-{
-	return this.hp;
-};
-
-Unit.prototype.getIcon = function()
-{
-	return this.icon;
-}
-
-Unit.prototype.getName = function()
-{
-	return this.name;
-}
-
-/*
-	var Person = function (Name) {
-		console.log("new person");
-		this.firstName = Name;
+	
+	//Object.prototype is a property
+	Unit.prototype.toString = function unitCustomToString() //overwrites the toString
+	{
+		return "teststring";
+	};
+	
+	Unit.prototype.getName = function()
+	{
+		return this.name;
+	};
+	
+	Unit.prototype.getHP = function() 
+	{
+		return this.hp;
 	};
 
-	Person.prototype.sayHello = function() {
-		console.log("Hello, I'm " + this.firstName);
+	Unit.prototype.getIcon = function()
+	{
+		return this.icon;
 	};
 
-	var person1 = new Person("Alice");
-	var person2 = new Person("Bob");
-	var helloFunction = person1.sayHello;
+	Unit.prototype.getX = function()
+	{
+		return this.xpos;
+	};
+
+	Unit.prototype.getY = function()
+	{
+		return this.ypos;
+	};
+
+	Unit.prototype.getAbilities = function()
+	{
+		return this.abilities;
+	};
 	
-	console.log(person1.sayHello());
-*/
+	Unit.prototype.getID = function()
+	{
+		return this.id;
+	}
+}
 	
-	var units = [];
-	var eMPTY = new Unit(0, {}, 0, 0, 0, 0, "Empty");
-	units.push(eMPTY);
+function Sprite()
+{
+  this.sourceX = 0,
+  this.sourceY = 0,
+  this.sourceWidth = 64,
+  this.sourceHeight = 64,
+  this.width = 64,
+  this.height = 64,
+  this.x = 0,
+  this.y = 0,
+  this.vx = 0,
+  this.vy = 0,
+  this.visible = true,
+  
+  //Getters
+  Sprite.prototype.centerX = function()
+  {
+    return this.x + (this.width / 2);
+  };
+  
+  Sprite.prototype.centerY = function()
+  {
+    return this.y + (this.height / 2);
+  };
+  
+  Sprite.prototype.halfWidth = function()
+  {
+    return this.width / 2;
+  };
+  
+  Sprite.prototype.halfHeight = function()
+  {
+    return this.height / 2;
+  };
+}
+
+	var units = []; //an array containing the units
+	
+	function addUnit(name, hp, abilities, tilesheetlocation, xpos, ypos) //creates and adds a unit to the units array and assigns id
+	{
+		//console.log("Name: " + name + " X: " + xpos + " Y: " + ypos);
+		units.push(new Unit(hp, abilities, tilesheetlocation, xpos, ypos, units.length, name));
+	}
+	
+	//var dummyEmpty = new Unit(undefined, undefined, undefined, undefined, undefined, 0, "Empty"); //a dummy unit with id 0
+	//addUnit(dummyEmpty); 
+	addUnit("Empty", undefined, undefined, undefined, undefined, undefined);
+	addUnit("Wizard", 5, WIZ_ABILITIES, 5, 0, 4);
+	addUnit("Warlord", 6, WAR_ABILITIES, 6, 1, 4);
+	addUnit("Archer", 7, ARC_ABILITIES, 7, 0, 5);
+	addUnit("Paladin", 8, PAL_ABILITIES, 8, 1, 5);
+	/*
+	console.log(units[1].getName());
+	console.log(units[1].getAbilities()[0]);
+	console.log(units[2].getName());
+	console.log(units[2].getAbilities());
+	console.log(units[3].getName());
+	console.log(units[3].getAbilities());
+	console.log(units[4].getName());
+	console.log(units[4].getAbilities());
+	*/
+	
+	/*
 	var wIZARD = new Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 5, 0, 4, 1, "Wizard");
 	units.push(wIZARD);
 	var wARLORD = new Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 6, 1, 4, 2, "Warlord");
@@ -265,6 +343,7 @@ Unit.prototype.getName = function()
 	units.push(aRCHER);
 	var pALADIN = new Unit(5, {FIREBALL, FROSTBOLT, CHAINL, TELE}, 8, 1, 5, 4, "Paladin");
 	units.push(pALADIN);
+	*/
 	//console.log(wIZARD.getHP());
 	
 	//var tester = new test();
@@ -275,25 +354,25 @@ Unit.prototype.getName = function()
 
 
 
-function initialClick(event)
+function initialClick(event, x, y) //clicking on row 13 gives TypeError: gameObjects[initialY] is undefined
 {
 	console.log("Initial click");
 	//Test();
 	
-	initialX = Math.floor((event.pageX - canvas.offsetLeft)/64);
-	initialY = Math.floor((event.pageY - canvas.offsetTop)/64);
-	var occupant = gameObjects[initialY][initialX];
+	initialX = x; //Math.floor((event.pageX - canvas.offsetLeft)/64);
+	initialY = y; //Math.floor((event.pageY - canvas.offsetTop)/64);
+	var occupant = units[gameObjects[initialY][initialX]];
 	
-	console.log(initialX + "," + initialY + " - " + units[occupant].getName());
+	console.log(initialX + "," + initialY + " - " + occupant.getName());
 	//console.log(initialY);
 	
-	//var id = gameObjects[y][x];
-	if(occupant != 0)
+	if(occupant.getID() != 0)
 	{
-		map[11][1] = units[gameObjects[initialY][initialX]-1].abilities[0];
-		map[11][2] = units[gameObjects[initialY][initialX]-1].abilities[1];
-		map[11][3] = units[gameObjects[initialY][initialX]-1].abilities[2];
-		map[11][4] = units[gameObjects[initialY][initialX]-1].abilities[3];
+		console.log("display abilities for " + occupant.getName());
+		map[11][1] = occupant.getAbilities()[0];
+		map[11][2] = occupant.getAbilities()[1];
+		map[11][3] = occupant.getAbilities()[2];
+		map[11][4] = occupant.getAbilities()[3];
 	}
 /* 	switch(gameObjects[initialY][initialX])
 	{
@@ -328,24 +407,25 @@ function initialClick(event)
       break; 
 	 
   }*/
-    
+	
     messages.push(hpMessage);
   
 	buildMap(map);
 	buildUnitMap();//buildMap(gameObjects);
+	buildAbilityMap();
 	
-	if(gameObjects[initialY][initialX] >= 5 && gameObjects[initialY][initialX] <= 8 )
+	if(gameObjects[initialY][initialX] > 0 && gameObjects[initialY][initialX] <= 4 )
 	{
 		moveStatus = 1;
 
 	}
 	
 }
-function targetClick(event)
+function targetClick(event, x, y)
 {
 	console.log("Target click");
-	targetX = Math.floor((event.pageX - canvas.offsetLeft)/64);
-	targetY = Math.floor((event.pageY - canvas.offsetTop)/64);
+	targetX = x; //Math.floor((event.pageX - canvas.offsetLeft)/64);
+	targetY = y; //Math.floor((event.pageY - canvas.offsetTop)/64);
 
 	console.log(targetX);
 	console.log(targetY);
@@ -367,24 +447,24 @@ function targetClick(event)
 		}
 }
 
-function mousedownHandler(event)
+function mousedownHandler(event) 
 {
 	x = Math.floor((event.pageX - canvas.offsetLeft)/64);
 	y = Math.floor((event.pageY - canvas.offsetTop)/64);
 	if(moveStatus === 0 || (gameObjects[y][x] >= 5 && gameObjects[y][x] <=8))
 	{
-		initialClick(event);
+		initialClick(event, x, y);
 	
 	}
 	else if(moveStatus === 1)
 	{
-		targetClick(event);
+		targetClick(event, x, y);
 	}
 }
 
 
 
-update();
+update(); //this begins the game
 
 function update()
 { 
@@ -395,7 +475,7 @@ function update()
   switch(gameState)
   {
     case LOADING:
-      console.log("loading...");
+      //console.log("loading...");
       break;
       
     case BUILD_MAP:
@@ -431,8 +511,26 @@ function loadHandler()
   }
 }
 
-function buildMap(levelMap)
+function iconFromTilesheet(index/*, xpos, ypos*/)
 {
+	var icon = Object.create(spriteObject);
+	icon.sourceX = Math.floor((index - 1) % TILESHEET_COLUMNS) * SIZE; //the icon's location on the tilesheet
+	icon.sourceY = Math.floor((index - 1) / TILESHEET_COLUMNS) * SIZE;
+    //icon.x = xpos * SIZE; //the icon's location in the gui
+    //icon.y = ypos * SIZE;
+	//console.log(icon.visible);
+    return icon;
+}
+
+function reloadSprites()
+{
+	sprites = [];
+}
+
+function buildMap(levelMap) //!!! sprites is constantly added to, so it becomes very large and contains redundant sprites
+{
+	//sprites = [];
+	//console.log("sprites" + sprites.length);
   for(var row = 0; row < ROWS; row++) 
   {	
     for(var column = 0; column < COLUMNS; column++) 
@@ -442,9 +540,10 @@ function buildMap(levelMap)
     
       if(currentTile !== EMPTY)
       {
+		  /*
         //Find the tile's x and y position on the tile sheet
-        var tilesheetX = Math.floor((currentTile - 1) % tilesheetColumns) * SIZE; 
-        var tilesheetY = Math.floor((currentTile - 1) / tilesheetColumns) * SIZE;
+        var tilesheetX = Math.floor((currentTile - 1) % TILESHEET_COLUMNS) * SIZE; 
+        var tilesheetY = Math.floor((currentTile - 1) / TILESHEET_COLUMNS) * SIZE;
         
 		var object = Object.create(spriteObject);
 			
@@ -453,7 +552,11 @@ function buildMap(levelMap)
             object.x = column * SIZE;
             object.y = row * SIZE;
             sprites.push(object);
-		
+		*/
+		var currentIcon = iconFromTilesheet(currentTile);
+		currentIcon.x = column * SIZE;
+		currentIcon.y = row * SIZE;
+		sprites.push(currentIcon);
       }
     }
   }
@@ -462,22 +565,38 @@ function buildMap(levelMap)
 function buildUnitMap()
 {
 	for(var row = 0; row < ROWS; row++) 
-  {	
-    for(var column = 0; column < COLUMNS; column++) 
-    { 
-		if(gameObjects[row][column] != 0)
-		{
-			//console.log()
-			//console.log(row);
-			//console.log(column);
-			//console.log(units[0].string);
-			//console.log(units[gameObjects[row][column]].string);
-			
-			sprites.push(units[gameObjects[row][column]-1].getIcon());
+	{	
+		for(var column = 0; column < COLUMNS; column++) 
+		{ 
+			if(gameObjects[row][column] != 0)
+			{
+				//console.log()
+				//console.log(row);
+				//console.log(column);
+				//console.log(units[0].string);
+				//console.log(units[gameObjects[row][column]].string);
+				var currentUnit = units[gameObjects[row][column]];
+				//console.log("Now drawing " + currentUnit.getName());
+				var currentIcon = currentUnit.getIcon();
+				//console.log("icon " + currentIcon);
+				currentIcon.x = column * SIZE; //currentUnit.getX();
+				currentIcon.y = row * SIZE; //currentUnit.getY();
+				sprites.push(currentIcon);
+			}
 		}
 	}
-  }
+	//console.log(sprites);
 }
+
+
+function buildAbilityMap()
+{
+	for(var counter = 1; counter < 5; counter++)
+	{
+		sprites.push(units[map[11][counter]]);
+	}
+}
+
 
 function createOtherObjects()
 {
@@ -545,6 +664,8 @@ function endGame()
 
 function render()
 { 
+	//console.log("rendering");
+	//console.log(sprites);
   drawingSurface.clearRect(0, 0, canvas.width, canvas.height);
   
   //Display the sprites
@@ -553,7 +674,8 @@ function render()
     for(var i = 0; i < sprites.length; i++)
 	{
 	  var sprite = sprites[i];
-	  if(sprite.visible)
+	  //console.log(sprite === undefined);
+	  if(sprite !== undefined && sprite.visible) //is a sprite ever not visible?
 	  {
         drawingSurface.drawImage
         (
@@ -566,6 +688,8 @@ function render()
       }
     }
   }
+  
+  //sprites = []; //!!!!!!!!!!!!!!!!!!!! empties sprites after they are drawn -- they need to be re-added
   
   //Display the game messages
   if(messages.length !== 0)
