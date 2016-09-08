@@ -100,25 +100,22 @@ var FIREBALL = 11; //pic for 1st wizard skill
 var FROSTBOLT = 12; //pic for 2nd wiz skill
 var CHAINL = 13;
 var TELE = 14;
-var WIZ_ABILITIES = [FIREBALL, FROSTBOLT, CHAINL, TELE];
 
 var RAGE = 15;
 var SLASH = 16;
 var ANNIHILATE = 17;
 var BASH = 18;
-var WAR_ABILITIES = [RAGE, SLASH, ANNIHILATE, BASH];
 
 var PA = 19;
 var CA = 20;
 var HS = 21;
 var POISON = 22;
-var ARC_ABILITIES = [PA, CA, HS, POISON];
 
 var SMITE = 23;
 var TAUNT = 24;
 var HEAL = 25;
 var THORNS = 26;
-var PAL_ABILITIES = [SMITE, TAUNT, HEAL, THORNS];
+
 //etc for other 2 skills and all 4 for each other unit.....
 //WAR_INFO = ;
 //ARC_INFO = ;
@@ -193,8 +190,6 @@ var moveDown = false;
 var moveRight = false;
 var moveLeft = false;
 
-
-
 canvas.addEventListener("mousedown", mousedownHandler, false);
 
 var moveStatus = 0;
@@ -203,32 +198,48 @@ var initialY = 0;
 var targetX = 0;
 var targetY = 0;
 
+//UNIT INFO CONSTANTS
+var EMPTY_NAME = "Empty";
+var WIZ_NAME = "Wizard";
+var WAR_NAME = "Warlord";
+var ARC_NAME = "Archer";
+var PAL_NAME = "Paladin";
 
-var wizardHP = 5;
-var warlordHP = 6;
-var archerHP = 7;
-var paladinHP = 8;
+var EMPTY_HP = undefined;
+var WIZ_HP = 5;
+var WAR_HP = 6;
+var ARC_HP = 7;
+var PAL_HP = 8;
 
-var test = function()
+var EMPTY_ABILITIES = undefined;
+var WIZ_ABILITIES = [FIREBALL, FROSTBOLT, CHAINL, TELE];
+var WAR_ABILITIES = [RAGE, SLASH, ANNIHILATE, BASH];
+var ARC_ABILITIES = [PA, CA, HS, POISON];
+var PAL_ABILITIES = [SMITE, TAUNT, HEAL, THORNS];
+//var GREY_ABILITIES = [];
+//var RED_ABILITIES = [];
+
+var EMPTY_TILESHEET = undefined;
+var WIZ_TILESHEET = 5;
+var WAR_TILESHEET = 6;
+var ARC_TILESHEET = 7;
+var PAL_TILESHEET = 8;
+
+function Unit(name, id, hp, abilities, tilesheetlocation)
 {
-	string = "hello";
-}
-
-function Unit(hp, abilities, tilesheetlocation, xpos, ypos, id, name)
-{
+	this.name = name;
+	this.id = id;
+	this.hpMax = hp;
 	this.hp = hp;
 	this.abilities = abilities;
-	//console.log(abilities[0]);
-	this.xpos = xpos;
-	this.ypos - ypos;
 	this.icon = iconFromTilesheet(tilesheetlocation);/*Object.create(spriteObject);
     this.icon.sourceX = Math.floor((tilesheetlocation - 1) % TILESHEET_COLUMNS) * SIZE;
     this.icon.sourceY = Math.floor((tilesheetlocation - 1) / TILESHEET_COLUMNS) * SIZE;*/
     //this.icon.x = column * SIZE; //the location of the icon needs to change whenever the unit is moved !!!!!the icon position only needs to be changed when the icon is being drawn
     //this.icon.y = row * SIZE;
             //sprites.push(object);
-	this.id = id;
-	this.name = name;
+	this.xpos = undefined;
+	this.ypos = undefined;
 	
 	//Object.prototype is a property
 	Unit.prototype.toString = function unitCustomToString() //overwrites the toString
@@ -241,6 +252,11 @@ function Unit(hp, abilities, tilesheetlocation, xpos, ypos, id, name)
 		return this.name;
 	};
 	
+	Unit.prototype.getHPMax = function()
+	{
+		return this.hpMax;
+	};
+	
 	Unit.prototype.getHP = function() 
 	{
 		return this.hp;
@@ -248,6 +264,8 @@ function Unit(hp, abilities, tilesheetlocation, xpos, ypos, id, name)
 
 	Unit.prototype.getIcon = function()
 	{
+		this.icon.x = this.xpos;
+		this.icon.y = this.ypos;
 		return this.icon;
 	};
 
@@ -260,6 +278,12 @@ function Unit(hp, abilities, tilesheetlocation, xpos, ypos, id, name)
 	{
 		return this.ypos;
 	};
+	
+	Unit.prototype.setPos = function(newX, newY)
+	{
+		this.xpos = newX;
+		this.ypos = newY;
+	}
 
 	Unit.prototype.getAbilities = function()
 	{
@@ -269,7 +293,7 @@ function Unit(hp, abilities, tilesheetlocation, xpos, ypos, id, name)
 	Unit.prototype.getID = function()
 	{
 		return this.id;
-	}
+	};
 }
 	
 function Sprite()
@@ -310,28 +334,52 @@ function Sprite()
 
 	var units = []; //an array containing the units
 	
-	function addUnit(name, hp, abilities, tilesheetlocation, xpos, ypos) //creates and adds a unit to the units array and assigns id
+	/*
+	function addUnit(name, hp, abilities, tilesheetlocation, xpos, ypos)
 	{
 		//console.log("Name: " + name + " X: " + xpos + " Y: " + ypos);
 		units.push(new Unit(hp, abilities, tilesheetlocation, xpos, ypos, units.length, name));
 	}
+	*/
+	
+	//creates a new unit based on template, assigns id, and adds to units
+	//it seems to know where to draw the sprites, probably based on where it is in gameObjects
+	//so are the coordinate properites and modifications necessary?
+	function addUnit(template)
+	{
+		switch (template)
+		{
+		case EMPTY:
+			units.push(new Unit(EMPTY_NAME, units.length, EMPTY_HP, EMPTY_ABILITIES, EMPTY_TILESHEET));
+			break;
+		case WIZARD:
+			units.push(new Unit(WIZ_NAME, units.length, WIZ_HP, WIZ_ABILITIES, WIZ_TILESHEET)); //xpos and ypos will vary by map and for each instance of a unit (enemy)
+			break;
+		case WARLORD:
+			units.push(new Unit(WAR_NAME, units.length, WAR_HP, WAR_ABILITIES, WAR_TILESHEET));
+			break;
+		case ARCHER:
+			units.push(new Unit(ARC_NAME, units.length, ARC_HP, ARC_ABILITIES, ARC_TILESHEET));
+			break;
+		case PALADIN:
+			units.push(new Unit(PAL_NAME, units.length, PAL_HP, PAL_ABILITIES, PAL_TILESHEET));
+			break;
+		}
+	}
 	
 	//var dummyEmpty = new Unit(undefined, undefined, undefined, undefined, undefined, 0, "Empty"); //a dummy unit with id 0
 	//addUnit(dummyEmpty); 
-	addUnit("Empty", undefined, undefined, undefined, undefined, undefined);
-	addUnit("Wizard", 5, WIZ_ABILITIES, 5, 0, 4);
-	addUnit("Warlord", 6, WAR_ABILITIES, 6, 1, 4);
+	addUnit(EMPTY);
+	addUnit(WIZARD);
+	addUnit(WARLORD);
+	addUnit(ARCHER);
+	addUnit(PALADIN);
+	//units[1].setPos(0,4);
+	/*
+	addUnit("Wizard", WIZ_HP, WIZ_ABILITIES, 5, 0, 4);
+	addUnit("Warlord", 6, WAR_HP, 6, 1, 4);
 	addUnit("Archer", 7, ARC_ABILITIES, 7, 0, 5);
 	addUnit("Paladin", 8, PAL_ABILITIES, 8, 1, 5);
-	/*
-	console.log(units[1].getName());
-	console.log(units[1].getAbilities()[0]);
-	console.log(units[2].getName());
-	console.log(units[2].getAbilities());
-	console.log(units[3].getName());
-	console.log(units[3].getAbilities());
-	console.log(units[4].getName());
-	console.log(units[4].getAbilities());
 	*/
 	
 	/*
@@ -354,25 +402,25 @@ function Sprite()
 
 
 
-function initialClick(event, x, y) //clicking on row 13 gives TypeError: gameObjects[initialY] is undefined
+function initialClick(event, x, y, occupant) //clicking on row 13 gives TypeError: gameObjects[initialY] is undefined
 {
-	console.log("Initial click");
-	//Test();
-	
 	initialX = x; //Math.floor((event.pageX - canvas.offsetLeft)/64);
 	initialY = y; //Math.floor((event.pageY - canvas.offsetTop)/64);
-	var occupant = units[gameObjects[initialY][initialX]];
 	
-	console.log(initialX + "," + initialY + " - " + occupant.getName());
+	//var occupant = units[gameObjects[initialY][initialX]];
+	
+	console.log("Initial click - " + x + "," + y + " - " + occupant.getName());
+
 	//console.log(initialY);
 	
 	if(occupant.getID() != 0)
 	{
-		console.log("display abilities for " + occupant.getName());
+		//console.log("display abilities for " + occupant.getName());
 		map[11][1] = occupant.getAbilities()[0];
 		map[11][2] = occupant.getAbilities()[1];
 		map[11][3] = occupant.getAbilities()[2];
 		map[11][4] = occupant.getAbilities()[3];
+		hpMessage.text = occupant.getName() + ": " + occupant.getHP() + "/" + occupant.getHPMax() + "hp";
 	}
 /* 	switch(gameObjects[initialY][initialX])
 	{
@@ -421,14 +469,14 @@ function initialClick(event, x, y) //clicking on row 13 gives TypeError: gameObj
 	}
 	
 }
-function targetClick(event, x, y)
-{
-	console.log("Target click");
+function targetClick(event, x, y, occupant)
+{	
 	targetX = x; //Math.floor((event.pageX - canvas.offsetLeft)/64);
 	targetY = y; //Math.floor((event.pageY - canvas.offsetTop)/64);
-
-	console.log(targetX);
-	console.log(targetY);
+	
+	//var occupant = units[gameObjects[initialY][initialX]];
+	
+	console.log("Target  click - " + x + "," + y + " - " + occupant.getName());
 	
 	if(((targetX === initialX && targetY - initialY === -1) || //up 
 		(targetX === initialX && targetY - initialY === 1) //down
@@ -437,7 +485,7 @@ function targetClick(event, x, y)
 		&& (gameObjects[targetY][targetX] < 5 || gameObjects[targetY][targetX] > 8)
 		) 
 		{
-			console.log("OI");
+			//console.log("OI");
 			gameObjects[targetY][targetX] = gameObjects[initialY][initialX];
 			gameObjects[initialY][initialX] = 0;
 			moveStatus = 0;
@@ -449,20 +497,20 @@ function targetClick(event, x, y)
 
 function mousedownHandler(event) 
 {
-	x = Math.floor((event.pageX - canvas.offsetLeft)/64);
-	y = Math.floor((event.pageY - canvas.offsetTop)/64);
-	if(moveStatus === 0 || (gameObjects[y][x] >= 5 && gameObjects[y][x] <=8))
+	var x = Math.floor((event.pageX - canvas.offsetLeft)/64);
+	var y = Math.floor((event.pageY - canvas.offsetTop)/64);
+	var occupant = units[gameObjects[y][x]];
+
+	if(moveStatus === 0 || (gameObjects[y][x] > 0 && gameObjects[y][x] <=4))
 	{
-		initialClick(event, x, y);
+		initialClick(event, x, y, occupant);
 	
 	}
 	else if(moveStatus === 1)
 	{
-		targetClick(event, x, y);
+		targetClick(event, x, y, occupant);
 	}
 }
-
-
 
 update(); //this begins the game
 
