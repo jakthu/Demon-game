@@ -116,6 +116,9 @@ var TAUNT = 24;
 var HEAL = 25;
 var THORNS = 26;
 
+var RED1 = 27;
+var RED2 = 28;
+
 //etc for other 2 skills and all 4 for each other unit.....
 //WAR_INFO = ;
 //ARC_INFO = ;
@@ -124,9 +127,6 @@ var THORNS = 26;
 //RED2_INFO = ;
 //GREY1_INFO = ;
 //GREY2_INFO = ;
-
-
-
 
 //The size of each tile cell
 var SIZE = 64;
@@ -168,8 +168,6 @@ gameTimer.time = 20;
 gameTimer.start(); */
 
 //var hpAmount = 10;
-
-
 
 //Game states
 var LOADING = 0;
@@ -226,8 +224,8 @@ var WIZ_ABILITIES = [FIREBALL, FROSTBOLT, CHAINL, TELE];
 var WAR_ABILITIES = [RAGE, SLASH, ANNIHILATE, BASH];
 var ARC_ABILITIES = [PA, CA, POISON, HS];
 var PAL_ABILITIES = [SMITE, TAUNT, HEAL, THORNS];
-var RED_ABILITIES = [];
-var GRE_ABILITIES = [];
+var RED_ABILITIES = [RED1, RED2]; //if a hero is clicked then an enemy is clicked, shows the last 2 abilities of the hero (ex: when wiz then red clicked --> red1, red2, chainl, tele)
+var GRE_ABILITIES = [RED1, RED2];
 
 //var UNITINFO_TILESHEET = [];
 var EMPTY_TILESHEET = undefined;
@@ -238,7 +236,7 @@ var PAL_TILESHEET = 8;
 var RED_TILESHEET = 9;
 var GRE_TILESHEET = 10;
 
-function Unit(name, id, hp, abilities, tilesheetlocation)
+function Unit(name, hp, abilities, tilesheetlocation, id)
 {
 	this.name = name;
 	this.id = id;
@@ -250,8 +248,8 @@ function Unit(name, id, hp, abilities, tilesheetlocation)
     this.icon.sourceY = Math.floor((tilesheetlocation - 1) / TILESHEET_COLUMNS) * SIZE;*/
     //this.icon.x = column * SIZE; //the location of the icon needs to change whenever the unit is moved !!!!!the icon position only needs to be changed when the icon is being drawn
     //this.icon.y = row * SIZE;
-            //sprites.push(object);
-	this.xpos = undefined;
+    //sprites.push(object);
+	this.xpos = undefined; //xpos and ypos will vary by map and for each instance of a unit (enemy), so there is no point in setting defaults
 	this.ypos = undefined;
 	
 	//Object.prototype is a property
@@ -363,25 +361,25 @@ function Sprite() //not used, just an experiment
 		switch (template)
 		{
 		case EMPTY:
-			units.push(new Unit(EMPTY_NAME, units.length, EMPTY_HP, EMPTY_ABILITIES, EMPTY_TILESHEET));
+			units.push(new Unit(EMPTY_NAME, EMPTY_HP, EMPTY_ABILITIES, EMPTY_TILESHEET, units.length));
 			break;
 		case WIZARD:
-			units.push(new Unit(WIZ_NAME, units.length, WIZ_HP, WIZ_ABILITIES, WIZ_TILESHEET)); //xpos and ypos will vary by map and for each instance of a unit (enemy)
+			units.push(new Unit(WIZ_NAME, WIZ_HP, WIZ_ABILITIES, WIZ_TILESHEET, units.length));
 			break;
 		case WARLORD:
-			units.push(new Unit(WAR_NAME, units.length, WAR_HP, WAR_ABILITIES, WAR_TILESHEET));
+			units.push(new Unit(WAR_NAME, WAR_HP, WAR_ABILITIES, WAR_TILESHEET, units.length));
 			break;
 		case ARCHER:
-			units.push(new Unit(ARC_NAME, units.length, ARC_HP, ARC_ABILITIES, ARC_TILESHEET));
+			units.push(new Unit(ARC_NAME, ARC_HP, ARC_ABILITIES, ARC_TILESHEET, units.length));
 			break;
 		case PALADIN:
-			units.push(new Unit(PAL_NAME, units.length, PAL_HP, PAL_ABILITIES, PAL_TILESHEET));
+			units.push(new Unit(PAL_NAME, PAL_HP, PAL_ABILITIES, PAL_TILESHEET, units.length));
 			break;
 		case RED:
-			units.push(new Unit(RED_NAME, units.length, RED_HP, RED_ABILITIES, RED_TILESHEET));
+			units.push(new Unit(RED_NAME, RED_HP, RED_ABILITIES, RED_TILESHEET, units.length));
 			break;
 		case GREY:
-			units.push(new Unit(GRE_NAME, units.length, GRE_HP, GRE_ABILITIES, GRE_TILESHEET));
+			units.push(new Unit(GRE_NAME, GRE_HP, GRE_ABILITIES, GRE_TILESHEET, units.length));
 			break;
 		}
 	}
