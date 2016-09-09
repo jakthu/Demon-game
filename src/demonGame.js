@@ -44,11 +44,11 @@ var gameObjects =/*
 ];*/
 [ 
   [0,0,0,0,0,0,0,0,0,0,0], //gameObjects holds the ids of each unit
+  [0,0,0,0,0,0,0,0,0,0,0], //it is technically possible for an id to be listed multiple times, 
+  [0,0,0,0,0,0,0,0,0,0,0], //resulting in a single unit being in multiple locations (like 0 for empty)
   [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [1,2,0,0,0,0,0,0,0,0,0],
-  [3,4,0,0,0,0,0,0,0,0,0],
+  [1,2,0,0,0,0,0,0,0,5,7],
+  [3,4,0,0,0,0,0,0,0,6,8],
   [0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0],
@@ -198,32 +198,45 @@ var initialY = 0;
 var targetX = 0;
 var targetY = 0;
 
-//UNIT INFO CONSTANTS
+//* * * * * * * * * * * *
+//* UNIT INFO CONSTANTS *
+//* * * * * * * * * * * *
+
+//var UNITINFO_NAME = [];
 var EMPTY_NAME = "Empty";
 var WIZ_NAME = "Wizard";
 var WAR_NAME = "Warlord";
 var ARC_NAME = "Archer";
 var PAL_NAME = "Paladin";
+var RED_NAME = "Red";
+var GRE_NAME = "Grey";
 
+//var UNITINFO_HP = [];
 var EMPTY_HP = undefined;
 var WIZ_HP = 5;
 var WAR_HP = 6;
 var ARC_HP = 7;
 var PAL_HP = 8;
+var RED_HP = undefined;
+var GRE_HP = undefined;
 
+//var UNITINFO_ABILITIES = [];
 var EMPTY_ABILITIES = undefined;
 var WIZ_ABILITIES = [FIREBALL, FROSTBOLT, CHAINL, TELE];
 var WAR_ABILITIES = [RAGE, SLASH, ANNIHILATE, BASH];
-var ARC_ABILITIES = [PA, CA, HS, POISON];
+var ARC_ABILITIES = [PA, CA, POISON, HS];
 var PAL_ABILITIES = [SMITE, TAUNT, HEAL, THORNS];
-//var GREY_ABILITIES = [];
-//var RED_ABILITIES = [];
+var RED_ABILITIES = [];
+var GRE_ABILITIES = [];
 
+//var UNITINFO_TILESHEET = [];
 var EMPTY_TILESHEET = undefined;
 var WIZ_TILESHEET = 5;
 var WAR_TILESHEET = 6;
 var ARC_TILESHEET = 7;
 var PAL_TILESHEET = 8;
+var RED_TILESHEET = 9;
+var GRE_TILESHEET = 10;
 
 function Unit(name, id, hp, abilities, tilesheetlocation)
 {
@@ -244,7 +257,7 @@ function Unit(name, id, hp, abilities, tilesheetlocation)
 	//Object.prototype is a property
 	Unit.prototype.toString = function unitCustomToString() //overwrites the toString
 	{
-		return "teststring";
+		return this.id + " - " + this.name;
 	};
 	
 	Unit.prototype.getName = function()
@@ -296,7 +309,7 @@ function Unit(name, id, hp, abilities, tilesheetlocation)
 	};
 }
 	
-function Sprite()
+function Sprite() //not used, just an experiment
 {
   this.sourceX = 0,
   this.sourceY = 0,
@@ -364,16 +377,26 @@ function Sprite()
 		case PALADIN:
 			units.push(new Unit(PAL_NAME, units.length, PAL_HP, PAL_ABILITIES, PAL_TILESHEET));
 			break;
+		case RED:
+			units.push(new Unit(RED_NAME, units.length, RED_HP, RED_ABILITIES, RED_TILESHEET));
+			break;
+		case GREY:
+			units.push(new Unit(GRE_NAME, units.length, GRE_HP, GRE_ABILITIES, GRE_TILESHEET));
+			break;
 		}
 	}
 	
 	//var dummyEmpty = new Unit(undefined, undefined, undefined, undefined, undefined, 0, "Empty"); //a dummy unit with id 0
 	//addUnit(dummyEmpty); 
-	addUnit(EMPTY);
-	addUnit(WIZARD);
-	addUnit(WARLORD);
-	addUnit(ARCHER);
-	addUnit(PALADIN);
+	addUnit(EMPTY); //id = 0
+	addUnit(WIZARD); //id = 1
+	addUnit(WARLORD); //id = 2
+	addUnit(ARCHER); //id = 3
+	addUnit(PALADIN); //id = 4
+	addUnit(RED); //id = 5
+	addUnit(RED); //id = 6
+	addUnit(GREY); //id = 7
+	addUnit(GREY); //id = 8
 	//units[1].setPos(0,4);
 	/*
 	addUnit("Wizard", WIZ_HP, WIZ_ABILITIES, 5, 0, 4);
@@ -516,47 +539,47 @@ update(); //this begins the game
 
 function update()
 { 
-  //The animation loop
-  requestAnimationFrame(update, canvas);
+	//The animation loop
+	requestAnimationFrame(update, canvas);
   
-  //Change what the game is doing based on the game state
-  switch(gameState)
-  {
-    case LOADING:
-      //console.log("loading...");
-      break;
+	//Change what the game is doing based on the game state
+	switch(gameState)
+	{
+		case LOADING:
+		//console.log("loading...");
+		break;
       
     case BUILD_MAP:
-      buildMap(map);
-      buildUnitMap();//buildMap(gameObjects);
-      createOtherObjects();
-      gameState = PLAYING;
-      break;
+		buildMap(map);
+		buildUnitMap();//buildMap(gameObjects);
+		createOtherObjects();
+		gameState = PLAYING;
+		break;
     
     case PLAYING:
-      //playGame();
-      break;
+		//playGame();
+		break;
     
     case OVER:
-      //endGame();
-      break;
-  }
+		//endGame();
+		break;
+	}
   
-  //Render the game
-  render();
+	//Render the game
+	render();
 }
 
 function loadHandler()
 { 
-  assetsLoaded++;
-  if(assetsLoaded === assetsToLoad.length)
-  {
-    //Remove the load handler
-    image.removeEventListener("load", loadHandler, false);
+	assetsLoaded++;
+	if(assetsLoaded === assetsToLoad.length)
+	{
+		//Remove the load handler
+		image.removeEventListener("load", loadHandler, false);
         
-    //Build the level 
-    gameState = BUILD_MAP;
-  }
+		//Build the level 
+		gameState = BUILD_MAP;
+	}
 }
 
 function iconFromTilesheet(index/*, xpos, ypos*/)
@@ -570,7 +593,7 @@ function iconFromTilesheet(index/*, xpos, ypos*/)
     return icon;
 }
 
-function reloadSprites()
+function reloadSprites() //unused atm
 {
 	sprites = [];
 }
@@ -579,35 +602,35 @@ function buildMap(levelMap) //!!! sprites is constantly added to, so it becomes 
 {
 	//sprites = [];
 	//console.log("sprites" + sprites.length);
-  for(var row = 0; row < ROWS; row++) 
-  {	
-    for(var column = 0; column < COLUMNS; column++) 
-    { 
+	for(var row = 0; row < ROWS; row++) 
+	{	
+		for(var column = 0; column < COLUMNS; column++) 
+		{ 
 
-      var currentTile = levelMap[row][column];
+			var currentTile = levelMap[row][column];
     
-      if(currentTile !== EMPTY)
-      {
-		  /*
-        //Find the tile's x and y position on the tile sheet
-        var tilesheetX = Math.floor((currentTile - 1) % TILESHEET_COLUMNS) * SIZE; 
-        var tilesheetY = Math.floor((currentTile - 1) / TILESHEET_COLUMNS) * SIZE;
+			if(currentTile !== EMPTY)
+			{
+				/*
+				//Find the tile's x and y position on the tile sheet
+				var tilesheetX = Math.floor((currentTile - 1) % TILESHEET_COLUMNS) * SIZE; 
+				var tilesheetY = Math.floor((currentTile - 1) / TILESHEET_COLUMNS) * SIZE;
         
-		var object = Object.create(spriteObject);
+				var object = Object.create(spriteObject);
 			
-            object.sourceX = tilesheetX;
-            object.sourceY = tilesheetY;
-            object.x = column * SIZE;
-            object.y = row * SIZE;
-            sprites.push(object);
-		*/
-		var currentIcon = iconFromTilesheet(currentTile);
-		currentIcon.x = column * SIZE;
-		currentIcon.y = row * SIZE;
-		sprites.push(currentIcon);
-      }
-    }
-  }
+				object.sourceX = tilesheetX;
+				object.sourceY = tilesheetY;
+				object.x = column * SIZE;
+				object.y = row * SIZE;
+				sprites.push(object);
+				*/
+				var currentIcon = iconFromTilesheet(currentTile);
+				currentIcon.x = column * SIZE;
+				currentIcon.y = row * SIZE;
+				sprites.push(currentIcon);
+			}
+		}
+	}
 }
 
 function buildUnitMap()
@@ -648,52 +671,58 @@ function buildAbilityMap()
 
 function createOtherObjects()
 {
- /*  timeDisplay = Object.create(spriteObject);
-  timeDisplay.sourceX = 0;
-  timeDisplay.sourceY = 64;
-  timeDisplay.sourceWidth = 128;
-  timeDisplay.sourceHeight = 48;
-  timeDisplay.width = 128;  
-  timeDisplay.height = 48;            
-  timeDisplay.x = canvas.width / 2 - timeDisplay.width / 2;
-  timeDisplay.y = 8;
-  sprites.push(timeDisplay); */
-  
-/*   gameOverDisplay = Object.create(spriteObject);
-  gameOverDisplay.sourceX = 0;
-  gameOverDisplay.sourceY = 129;
-  gameOverDisplay.sourceWidth = 316;
-  gameOverDisplay.sourceHeight = 290;
-  gameOverDisplay.width = 316;  
-  gameOverDisplay.height = 290;            
-  gameOverDisplay.x = canvas.width / 2 - gameOverDisplay.width / 2;
-  gameOverDisplay.y = canvas.height / 2 - gameOverDisplay.height / 2;
-  gameOverDisplay.visible = false;
-  sprites.push(gameOverDisplay);
-  
-  gameOverMessage = Object.create(messageObject);
-  gameOverMessage.x = 275;
-  gameOverMessage.y = 270;
-  gameOverMessage.font = "bold 30px Helvetica";
-  gameOverMessage.fillStyle = "black";
-  gameOverMessage.text = "";
-  gameOverMessage.visible = false;
-  messages.push(gameOverMessage); */
-  
-/*   timerMessage = Object.create(messageObject);
-  timerMessage.x = 330;
-  timerMessage.y = 10;
-  timerMessage.font = "bold 40px Helvetica";
-  timerMessage.fillStyle = "white";
-  timerMessage.text = "";
-  messages.push(timerMessage); */
-  
-  hpMessage = Object.create(messageObject);
-  hpMessage.x = 11;
-  hpMessage.y = 660;
-  hpMessage.font = "bold 40px Helvetica";
-  hpMessage.fillStyle = "black";
-  hpMessage.text = "";
+	 /*  
+	 timeDisplay = Object.create(spriteObject);
+	  timeDisplay.sourceX = 0;
+	  timeDisplay.sourceY = 64;
+	  timeDisplay.sourceWidth = 128;
+	  timeDisplay.sourceHeight = 48;
+	  timeDisplay.width = 128;  
+	  timeDisplay.height = 48;            
+	  timeDisplay.x = canvas.width / 2 - timeDisplay.width / 2;
+	  timeDisplay.y = 8;
+	  sprites.push(timeDisplay); 
+	  */
+	  
+	/*   
+	gameOverDisplay = Object.create(spriteObject);
+	  gameOverDisplay.sourceX = 0;
+	  gameOverDisplay.sourceY = 129;
+	  gameOverDisplay.sourceWidth = 316;
+	  gameOverDisplay.sourceHeight = 290;
+	  gameOverDisplay.width = 316;  
+	  gameOverDisplay.height = 290;            
+	  gameOverDisplay.x = canvas.width / 2 - gameOverDisplay.width / 2;
+	  gameOverDisplay.y = canvas.height / 2 - gameOverDisplay.height / 2;
+	  gameOverDisplay.visible = false;
+	  sprites.push(gameOverDisplay);
+	  
+	  gameOverMessage = Object.create(messageObject);
+	  gameOverMessage.x = 275;
+	  gameOverMessage.y = 270;
+	  gameOverMessage.font = "bold 30px Helvetica";
+	  gameOverMessage.fillStyle = "black";
+	  gameOverMessage.text = "";
+	  gameOverMessage.visible = false;
+	  messages.push(gameOverMessage); 
+	  */
+	  
+	/*   
+	timerMessage = Object.create(messageObject);
+	  timerMessage.x = 330;
+	  timerMessage.y = 10;
+	  timerMessage.font = "bold 40px Helvetica";
+	  timerMessage.fillStyle = "white";
+	  timerMessage.text = "";
+	  messages.push(timerMessage); 
+	  */
+	  
+	hpMessage = Object.create(messageObject);
+	hpMessage.x = 11;
+	hpMessage.y = 660;
+	hpMessage.font = "bold 40px Helvetica";
+	hpMessage.fillStyle = "black";
+	hpMessage.text = "";
 }
 
 
@@ -714,46 +743,46 @@ function render()
 { 
 	//console.log("rendering");
 	//console.log(sprites);
-  drawingSurface.clearRect(0, 0, canvas.width, canvas.height);
+	drawingSurface.clearRect(0, 0, canvas.width, canvas.height);
   
-  //Display the sprites
-  if(sprites.length !== 0)
-  {
-    for(var i = 0; i < sprites.length; i++)
+	//Display the sprites
+	if(sprites.length !== 0)
 	{
-	  var sprite = sprites[i];
-	  //console.log(sprite === undefined);
-	  if(sprite !== undefined && sprite.visible) //is a sprite ever not visible?
-	  {
-        drawingSurface.drawImage
-        (
-           image, 
-           sprite.sourceX, sprite.sourceY, 
-           sprite.sourceWidth, sprite.sourceHeight,
-           Math.floor(sprite.x), Math.floor(sprite.y), 
-           sprite.width, sprite.height
-        ); 
-      }
-    }
-  }
+		for(var i = 0; i < sprites.length; i++)
+		{
+			var sprite = sprites[i];
+			//console.log(sprite === undefined);
+			if(sprite !== undefined && sprite.visible) //is a sprite ever not visible?
+			{
+				drawingSurface.drawImage
+				(
+					image, 
+					sprite.sourceX, sprite.sourceY, 
+					sprite.sourceWidth, sprite.sourceHeight,
+					Math.floor(sprite.x), Math.floor(sprite.y), 
+					sprite.width, sprite.height
+				); 
+			}
+		}
+	}
   
-  //sprites = []; //!!!!!!!!!!!!!!!!!!!! empties sprites after they are drawn -- they need to be re-added
+	//sprites = []; //!!!!!!!!!!!!!!!!!!!! empties sprites after they are drawn -- they need to be re-added
   
-  //Display the game messages
-  if(messages.length !== 0)
-  {
-    for(var i = 0; i < messages.length; i++)
-    {
-      var message = messages[i];
-      if(message.visible)
-      {
-        drawingSurface.font = message.font;  
-        drawingSurface.fillStyle = message.fillStyle;
-        drawingSurface.textBaseline = message.textBaseline;
-        drawingSurface.fillText(message.text, message.x, message.y);  
-      }
-    }
-  }
+	//Display the game messages
+	if(messages.length !== 0)
+	{
+		for(var i = 0; i < messages.length; i++)
+		{
+			var message = messages[i];
+			if(message.visible)
+			{
+				drawingSurface.font = message.font;  
+				drawingSurface.fillStyle = message.fillStyle;
+				drawingSurface.textBaseline = message.textBaseline;
+				drawingSurface.fillText(message.text, message.x, message.y);  
+			}
+		}
+	}
 }
 
 }());
