@@ -300,16 +300,16 @@ function Sprite() //not used, just an experiment
 			units.push(new Unit(EMPTY_NAME, EMPTY_HP, EMPTY_ABILITIES, EMPTY_TILESHEET, undefined, units.length));
 			break;
 		case WIZARD:
-			units.push(new Unit(WIZ_NAME, WIZ_HP, WIZ_ABILITIES, WIZ_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
+			units.push(new Unit(WIZ_NAME, WIZ_HP, WIZ_ABILITIES, WIZ_TILESHEET, ["Fireball - 2 dmg to single target", "Frostbolt - 1 dmg to single target; dmg increases by 1 with each consecutive frostbolt on same target", "Chain Lightning - 1 dmg to a target and enemies next to that target", "Teleport - move 2 spaces"], units.length));
 			break;
 		case WARLORD:
-			units.push(new Unit(WAR_NAME, WAR_HP, WAR_ABILITIES, WAR_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
+			units.push(new Unit(WAR_NAME, WAR_HP, WAR_ABILITIES, WAR_TILESHEET, ["Rage - move 3 spaces this turn; lose 1 HP", "Slash - 1 dmg to enemies in an arc", "Annihilate - 3 dmg to single target", "Bash - 1 dmg to single target; 30% chance to stun target for 1 turn"], units.length));
 			break;
 		case ARCHER:
-			units.push(new Unit(ARC_NAME, ARC_HP, ARC_ABILITIES, ARC_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
+			units.push(new Unit(ARC_NAME, ARC_HP, ARC_ABILITIES, ARC_TILESHEET, ["Piercing Arrow - deals 1 dmg to all enemies in a straight line", "Crippling Arrow - 1 dmg to single target; 40% chance to prevent target from moving for 1 turn", "Head Shot - 1 dmg to single target; 50% chance to do 4 dmg", "Poison Arrow - 1 dmg to a single target each turn for the next 10 turns"], units.length));
 			break;
 		case PALADIN:
-			units.push(new Unit(PAL_NAME, PAL_HP, PAL_ABILITIES, PAL_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
+			units.push(new Unit(PAL_NAME, PAL_HP, PAL_ABILITIES, PAL_TILESHEET, ["Smite - 2 dmg to single target, 50% chance to do 1 dmg to nearby targets", "Taunt - forces target to stay come to adjacent square", "Heal - restore 2 HP to an ally", "Thorns - 1 dmg to adjacent enemies the next 7 turns"], units.length));
 			break;
 		case RED:
 			units.push(new Unit(RED_NAME, RED_HP, RED_ABILITIES, RED_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
@@ -348,6 +348,10 @@ function initialClick(event, x, y, occupant) //clicking on row 13 gives TypeErro
 	hpMessage.text = occupant.getName() + ": " + occupant.getHP() + "/" + occupant.getHPMax() + "hp";
     messages.push(hpMessage);
   
+	//clears skill text if another unit or grid is clicked
+	skillMessage.text = "";
+	messages.push(skillMessage);
+	
 	buildMap(map);
 	buildUnitMap();//buildMap(gameObjects);
 	buildAbilityMap();
@@ -377,6 +381,7 @@ function targetClick(event, x, y, occupant)
 		moveStatus = 0;
 		buildMap(map);
 		buildUnitMap();//buildMap(gameObjects);
+		
 	}
 }
 
@@ -385,6 +390,9 @@ function abilityClick(event, x)
 	console.log("ability clicked");
 	console.log(currentlySelectedUnit.getAbilities()[x-1]);
 	console.log(currentlySelectedUnit.getSkillText()[x-1]);
+
+	skillMessage.text = currentlySelectedUnit.getSkillText()[x-1];
+	messages.push(skillMessage);
 }
 
 function mousedownHandler(event) 
@@ -392,16 +400,18 @@ function mousedownHandler(event)
 	var x = Math.floor((event.pageX - canvas.offsetLeft)/64);
 	var y = Math.floor((event.pageY - canvas.offsetTop)/64);
 	var occupant = units[gameObjects[y][x]];
-
+	console.log("occupant: " + occupant);
+	
 	if(y === 11 && x > 0 && x < 5)
 	{
 		abilityClick(event, x);
 	}
 	else
 	{
-		currentlySelectedUnit = occupant;
+		
 		if(moveStatus === 0 || (gameObjects[y][x] > 0 && gameObjects[y][x] <=4))
 		{
+			currentlySelectedUnit = occupant;
 			initialClick(event, x, y, occupant);
 		}
 		else if(moveStatus === 1)
@@ -524,7 +534,7 @@ function createOtherObjects()
 	skillMessage = Object.create(messageObject);
 	skillMessage.x = 40;
 	skillMessage.y = 800;
-	skillMessage.font = "bold 40px Helvetica";
+	skillMessage.font = "12px Helvetica";
 	skillMessage.fillStyle = "black";
 	skillMessage.text = "";
 }
