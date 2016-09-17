@@ -115,6 +115,7 @@ var TILESHEET_COLUMNS = 4;
 var sprites = [];
 var messages = []; //for hpMessages & other unit info
 var units = []; //an array containing the units
+var cast = [];
 
 var assetsToLoad = [];
 var assetsLoaded = 0;
@@ -140,6 +141,8 @@ var initialY = 0;
 var targetX = 0;
 var targetY = 0;
 var currentlySelectedUnit;
+var actionX = 0;
+var actionY = 0;
 
 //* * * * * * * * * * * *
 //* UNIT INFO CONSTANTS *
@@ -180,6 +183,11 @@ var ARC_TILESHEET = 7;
 var PAL_TILESHEET = 8;
 var RED_TILESHEET = 9;
 var GRE_TILESHEET = 10;
+
+var FIREBALL_DAMAGE = 2;
+
+var TYPE_ENEMY = 1;
+var TYPE_ALLY = 2;
 
 function Unit(name, hp, abilities, tilesheetlocation, skillText, id)
 {
@@ -253,6 +261,37 @@ function Unit(name, hp, abilities, tilesheetlocation, skillText, id)
 	};
 }
 	
+	
+function Skill (name, range, damage, targetType)	
+{
+	this.name = name;
+	this.range = range;
+	this.damage = damage;
+	this.targetType = targetType;
+	
+	Skill.prototype.getName = function()
+	{
+		return this.name;
+	};
+	
+	Skill.prototype.getRange = function()
+	{
+		return this.range;
+	};
+	
+	Skill.prototype.getDamage = function()
+	{
+		return this.damage;
+	};
+	
+	Skill.prototype.getTargetType = function()
+	{
+		return this.targetType;
+	};
+	
+}
+
+
 function Sprite() //not used, just an experiment
 {
   this.sourceX = 0,
@@ -300,16 +339,16 @@ function Sprite() //not used, just an experiment
 			units.push(new Unit(EMPTY_NAME, EMPTY_HP, EMPTY_ABILITIES, EMPTY_TILESHEET, undefined, units.length));
 			break;
 		case WIZARD:
-			units.push(new Unit(WIZ_NAME, WIZ_HP, WIZ_ABILITIES, WIZ_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
+			units.push(new Unit(WIZ_NAME, WIZ_HP, WIZ_ABILITIES, WIZ_TILESHEET, ["Fireball - 2 dmg to single target", "Frostbolt - 1 dmg to single target; dmg increases by 1 with each consecutive frostbolt on same target", "Chain Lightning - 1 dmg to a target and enemies next to that target", "Teleport - move 2 spaces"], units.length));
 			break;
 		case WARLORD:
-			units.push(new Unit(WAR_NAME, WAR_HP, WAR_ABILITIES, WAR_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
+			units.push(new Unit(WAR_NAME, WAR_HP, WAR_ABILITIES, WAR_TILESHEET, ["Rage - move 3 spaces this turn; lose 1 HP", "Slash - 1 dmg to enemies in an arc", "Annihilate - 3 dmg to single target", "Bash - 1 dmg to single target; 30% chance to stun target for 1 turn"], units.length));
 			break;
 		case ARCHER:
-			units.push(new Unit(ARC_NAME, ARC_HP, ARC_ABILITIES, ARC_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
+			units.push(new Unit(ARC_NAME, ARC_HP, ARC_ABILITIES, ARC_TILESHEET, ["Piercing Arrow - deals 1 dmg to all enemies in a straight line", "Crippling Arrow - 1 dmg to single target; 40% chance to prevent target from moving for 1 turn", "Head Shot - 1 dmg to single target; 50% chance to do 4 dmg", "Poison Arrow - 1 dmg to a single target each turn for the next 10 turns"], units.length));
 			break;
 		case PALADIN:
-			units.push(new Unit(PAL_NAME, PAL_HP, PAL_ABILITIES, PAL_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
+			units.push(new Unit(PAL_NAME, PAL_HP, PAL_ABILITIES, PAL_TILESHEET, ["Smite - 2 dmg to single target, 50% chance to do 1 dmg to nearby targets", "Taunt - forces target to stay come to adjacent square", "Heal - restore 2 HP to an ally", "Thorns - 1 dmg to adjacent enemies the next 7 turns"], units.length));
 			break;
 		case RED:
 			units.push(new Unit(RED_NAME, RED_HP, RED_ABILITIES, RED_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
@@ -318,6 +357,22 @@ function Sprite() //not used, just an experiment
 			units.push(new Unit(GRE_NAME, GRE_HP, GRE_ABILITIES, GRE_TILESHEET, ["Fireball", "Frostbolt", "Chain Lightning", "Teleport"], units.length));
 			break;
 		}
+	}
+	
+	function castSkill(use)
+	{
+		switch (use)
+		{
+		case FIREBALL:
+			console.log("fireball cast ran");
+			cast.push(new Skill("Fireball", 3, FIREBALL_DAMAGE, TYPE_ENEMY));
+			break;
+		}
+	}
+	
+	function distance () //finds distance between the selected unit and the tile you click on when a skill is selected
+	{
+		//return Math.abs(initialX - actionX) + Math.abs(initialY - actionY);
 	}
 	
 	addUnit(EMPTY); //id = 0
@@ -348,6 +403,10 @@ function initialClick(event, x, y, occupant) //clicking on row 13 gives TypeErro
 	hpMessage.text = occupant.getName() + ": " + occupant.getHP() + "/" + occupant.getHPMax() + "hp";
     messages.push(hpMessage);
   
+	//clears skill text if another unit or grid is clicked
+	skillMessage.text = "";
+	messages.push(skillMessage);
+	
 	buildMap(map);
 	buildUnitMap();//buildMap(gameObjects);
 	buildAbilityMap();
@@ -377,6 +436,7 @@ function targetClick(event, x, y, occupant)
 		moveStatus = 0;
 		buildMap(map);
 		buildUnitMap();//buildMap(gameObjects);
+		
 	}
 }
 
@@ -385,6 +445,23 @@ function abilityClick(event, x)
 	console.log("ability clicked");
 	console.log(currentlySelectedUnit.getAbilities()[x-1]);
 	console.log(currentlySelectedUnit.getSkillText()[x-1]);
+
+	skillMessage.text = currentlySelectedUnit.getSkillText()[x-1];
+	messages.push(skillMessage);
+	moveStatus = 2;
+}
+
+function actionClick(event, x, y, occupant)
+{
+	console.log("action clicked");
+	moveStatus = 0;
+	actionX = x;
+	actionY = y;
+	if ((gameObjects[y][x]>=5 && gameObjects[y][x] <=8) && Skill.targetType === TYPE_ENEMY)
+	{
+		//decrease enemy HP by damage of skill
+	}
+	
 }
 
 function mousedownHandler(event) 
@@ -392,22 +469,32 @@ function mousedownHandler(event)
 	var x = Math.floor((event.pageX - canvas.offsetLeft)/64);
 	var y = Math.floor((event.pageY - canvas.offsetTop)/64);
 	var occupant = units[gameObjects[y][x]];
-
+	console.log("occupant: " + occupant);
+	
 	if(y === 11 && x > 0 && x < 5)
 	{
 		abilityClick(event, x);
 	}
 	else
 	{
-		currentlySelectedUnit = occupant;
+		
 		if(moveStatus === 0 || (gameObjects[y][x] > 0 && gameObjects[y][x] <=4))
 		{
+			currentlySelectedUnit = occupant;
 			initialClick(event, x, y, occupant);
 		}
 		else if(moveStatus === 1)
 		{
 			targetClick(event, x, y, occupant);
 		}
+		else if(moveStatus === 2)
+		{
+			actionClick(event, x, y, occupant);
+		}
+		/* else if(moveStatus ===3 && (skillRange)
+		{
+			moveStatus = 1;
+		} */
 	}
 }
 
@@ -524,7 +611,7 @@ function createOtherObjects()
 	skillMessage = Object.create(messageObject);
 	skillMessage.x = 40;
 	skillMessage.y = 800;
-	skillMessage.font = "bold 40px Helvetica";
+	skillMessage.font = "12px Helvetica";
 	skillMessage.fillStyle = "black";
 	skillMessage.text = "";
 }
