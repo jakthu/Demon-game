@@ -115,7 +115,7 @@ var TILESHEET_COLUMNS = 4;
 var sprites = [];
 var messages = []; //for hpMessages & other unit info
 var units = []; //an array containing the units
-var cast = [];
+var skills = [];
 
 var assetsToLoad = [];
 var assetsLoaded = 0;
@@ -163,8 +163,8 @@ var WIZ_HP = 5;
 var WAR_HP = 6;
 var ARC_HP = 7;
 var PAL_HP = 8;
-var RED_HP = undefined;
-var GRE_HP = undefined;
+var RED_HP = 8;
+var GRE_HP = 9;
 
 //var UNITINFO_ABILITIES = [];
 var EMPTY_ABILITIES = undefined;
@@ -188,6 +188,8 @@ var FIREBALL_DAMAGE = 2;
 
 var TYPE_ENEMY = 1;
 var TYPE_ALLY = 2;
+
+var currentSkill = 0;
 
 function Unit(name, hp, abilities, tilesheetlocation, skillText, id)
 {
@@ -220,6 +222,11 @@ function Unit(name, hp, abilities, tilesheetlocation, skillText, id)
 	Unit.prototype.getHP = function() 
 	{
 		return this.hp;
+	};
+	
+	Unit.prototype.setHP = function(currentHP)
+	{
+		this.hp = currentHP;
 	};
 
 	Unit.prototype.getIcon = function()
@@ -365,7 +372,7 @@ function Sprite() //not used, just an experiment
 		{
 		case FIREBALL:
 			console.log("fireball cast ran");
-			cast.push(new Skill("Fireball", 3, FIREBALL_DAMAGE, TYPE_ENEMY));
+			skills.push(new Skill("Fireball", 3, FIREBALL_DAMAGE, TYPE_ENEMY));
 			break;
 		}
 	}
@@ -385,6 +392,8 @@ function Sprite() //not used, just an experiment
 	addUnit(GREY); //id = 7
 	addUnit(GREY); //id = 8
 	console.log(units[4].getAbilities());
+	
+	castSkill(FIREBALL); //id =11
 
 function initialClick(event, x, y, occupant) //clicking on row 13 gives TypeError: gameObjects[initialY] is undefined
 {
@@ -449,6 +458,7 @@ function abilityClick(event, x)
 	skillMessage.text = currentlySelectedUnit.getSkillText()[x-1];
 	messages.push(skillMessage);
 	moveStatus = 2;
+	currentSkill = currentlySelectedUnit.getAbilities()[x-1] - FIREBALL;
 }
 
 function actionClick(event, x, y, occupant)
@@ -457,9 +467,12 @@ function actionClick(event, x, y, occupant)
 	moveStatus = 0;
 	actionX = x;
 	actionY = y;
-	if ((gameObjects[y][x]>=5 && gameObjects[y][x] <=8) && Skill.targetType === TYPE_ENEMY)
+	if ((gameObjects[y][x]>=5 && gameObjects[y][x] <=8) && skills[currentSkill].getTargetType() === TYPE_ENEMY)
 	{
+		console.log("ssss");
+
 		//decrease enemy HP by damage of skill
+		occupant.setHP(occupant.getHP()-skills[currentSkill].getDamage());
 	}
 	
 }
