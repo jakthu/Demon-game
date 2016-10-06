@@ -88,8 +88,8 @@ var BASH = 18;
 
 var PA = 19;
 var CA = 20;
-var HS = 21;
-var POISON = 22;
+var POISON = 21;
+var HS = 22;
 
 var SMITE = 23;
 var TAUNT = 24;
@@ -144,6 +144,12 @@ var currentlySelectedUnit;
 var actionX = 0;
 var actionY = 0;
 
+//---------------------------------skill declarations
+var sDummy;
+var sFireball;
+var sFrostbolt;
+var sTele;
+
 //* * * * * * * * * * * *
 //* UNIT INFO CONSTANTS *
 //* * * * * * * * * * * *
@@ -184,7 +190,87 @@ var PAL_TILESHEET = 8;
 var RED_TILESHEET = 9;
 var GRE_TILESHEET = 10;
 
+//* * * * * * * * * *
+//* SKILL CONSTANTS *
+//* * * * * * * * * *
+
+//DAMAGE
+var DUMMY_DAMAGE = undefined;
 var FIREBALL_DAMAGE = 2;
+var FROSTBOLT_DAMAGE = 1;
+var CHAINL_DAMAGE = 1;
+var TELE_DAMAGE = 0;
+var RAGE_DAMAGE = 1;
+var SLASH_DAMAGE = 1;
+var ANNIHILATE_DAMAGE = 3;
+var BASH_DAMAGE = 1;
+var PA_DAMAGE = 1;
+var CA_DAMAGE = 1;
+var POISON_DAMAGE = 1;
+var HS_DAMAGE = 1;
+var SMITE_DAMAGE = 2;
+var TAUNT_DAMAGE = 0;
+var HEAL_DAMAGE = -2;
+var THORNS_DAMAGE = 1;
+
+//RANGE
+var DUMMY_RANGE = undefined;
+var FIREBALL_RANGE = undefined;
+var FROSTBOLT_RANGE = undefined;
+var CHAINL_RANGE = undefined;
+var TELE_RANGE = 2;
+var RAGE_RANGE = 3;
+var SLASH_RANGE = 1;
+var ANNIHILATE_RANGE = 1;
+var BASH_RANGE = 1;
+var PA_RANGE = undefined;
+var CA_RANGE = undefined;
+var POISON_RANGE = undefined;
+var HS_RANGE = undefined;
+var SMITE_RANGE = 1;
+var TAUNT_RANGE = undefined;
+var HEAL_RANGE = undefined;
+var THORNS_RANGE = 1;
+
+//PROC
+var DUMMY_PROC = undefined;
+var FIREBALL_PROC = undefined;
+var FROSTBOLT_PROC = undefined;
+var CHAINL_PROC = undefined;
+var TELE_PROC = undefined;
+var RAGE_PROC = undefined;
+var SLASH_PROC = undefined;
+var ANNIHILATE_PROC = undefined;
+var BASH_PROC = 30;
+var PA_PROC = undefined;
+var CA_PROC = 40;
+var POISON_PROC = undefined;
+var HS_PROC = 50;
+var SMITE_PROC = 50;
+var TAUNT_PROC = undefined;
+var HEAL_PROC = undefined;
+var THORNS_PROC = undefined;
+
+
+//DESCRIPTION
+var DUMMY_DESCRIPTION = undefined;
+var FIREBALL_DESCRIPTION = FIREBALL_DAMAGE + " dmg to single target";
+var FROSTBOLT_DESCRIPTION = FROSTBOLT_DAMAGE + " dmg to single target; dmg increases by 1 with each consecutive frostbolt on same target";
+var CHAINL_DESCRIPTION = CHAINL_DAMAGE + " dmg to a target and enemies next to that target";
+var TELE_DESCRIPTION = "move 2 spaces";
+var RAGE_DESCRIPTION = "move 3 spaces this turn; lose " + RAGE_DAMAGE + " HP"
+var SLASH_DESCRIPTION = SLASH_DAMAGE + " dmg to enemies in an arc"
+var ANNIHILATE_DESCRIPTION = ANNIHILATE_DAMAGE + " dmg to single target";
+var BASH_DESCRIPTION = BASH_DAMAGE + " dmg to single target; " + BASH_PROC + "% chance to stun target for 1 turn";
+var PA_DESCRIPTION = "deals " + PA_DAMAGE + " dmg to all enemies in a straight line";
+var CA_DESCRIPTION = CA_DAMAGE + " dmg to single target; " + CA_PROC + "% chance to prevent target from moving for 1 turn";
+var POISON_DESCRIPTION = POISON_DAMAGE + " dmg to a single target each turn for the next 10 turns";
+var HS_DESCRIPTION = HS_DAMAGE + " dmg to single target; " + HS_PROC + "% chance to do 4 dmg";
+var SMITE_DESCRIPTION = SMITE_DAMAGE + " dmg to single target, " + SMITE_PROC + "% chance to do 1 dmg to nearby targets";
+var TAUNT_DESCRIPTION = "forces target to stay come to adjacent square";
+var HEAL_DESCRIPTION = "restore " + -HEAL_DAMAGE + " HP to an ally";
+var THORNS_DESCRIPTION = THORNS_DAMAGE + " dmg to adjacent enemies the next 7 turns";
+
 
 var TYPE_ENEMY = 1;
 var TYPE_ALLY = 2;
@@ -269,12 +355,14 @@ function Unit(name, hp, abilities, tilesheetlocation, skillText, id)
 }
 	
 	
-function Skill (name, range, damage, targetType)	
+function Skill(name, range, damage, proc, targetType, description, effect, tilesheet)	
 {
 	this.name = name;
 	this.range = range;
 	this.damage = damage;
 	this.targetType = targetType;
+	this.description = description;
+	this.tilesheet = tilesheet;
 	
 	Skill.prototype.getName = function()
 	{
@@ -296,9 +384,20 @@ function Skill (name, range, damage, targetType)
 		return this.targetType;
 	};
 	
+	Skill.prototype.getDescription = function()
+	{
+		return this.description;
+	};
+	
+	Skill.prototype.effect = effect; //effect is a function that performs the skill's special effects
+	
+	Skill.prototype.getTilesheet = function()
+	{
+		return this.tilesheet;
+	}
 }
 
-
+/*
 function Sprite() //not used, just an experiment
 {
   this.sourceX = 0,
@@ -334,8 +433,9 @@ function Sprite() //not used, just an experiment
     return this.height / 2;
   };
 }
+*/
 	
-	//creates a new unit based on template, assigns id, and adds to units
+	//creates a new instance of a unit based on template, assigns id, and adds to units
 	//it seems to know where to draw the sprites, probably based on where it is in gameObjects
 	//so are the coordinate properites and modifications necessary?
 	function addUnit(template)
@@ -366,6 +466,13 @@ function Sprite() //not used, just an experiment
 		}
 	}
 	
+	sDummy = new Skill("Dummy", undefined, undefined, undefined, "dummy skill");
+	sFireball = new Skill("Fireball", FIREBALL_RANGE, FIREBALL_DAMAGE, FIREBALL_PROC, TYPE_ENEMY, FIREBALL_DESCRIPTION, FIREBALL);
+	sFrostbolt = new Skill("Frostbolt", undefined, undefined, undefined, "dummy skill");
+	sDummy = new Skill("Dummy", undefined, undefined, undefined, "dummy skill");
+	sDummy = new Skill("Dummy", undefined, undefined, undefined, "dummy skill");
+	
+	/*
 	function castSkill(use)
 	{
 		switch (use)
@@ -376,11 +483,14 @@ function Sprite() //not used, just an experiment
 			break;
 		}
 	}
+	*/
 	
+	/*
 	function distance () //finds distance between the selected unit and the tile you click on when a skill is selected
 	{
 		//return Math.abs(initialX - actionX) + Math.abs(initialY - actionY);
 	}
+	*/
 	
 	addUnit(EMPTY); //id = 0
 	addUnit(WIZARD); //id = 1
@@ -393,7 +503,7 @@ function Sprite() //not used, just an experiment
 	addUnit(GREY); //id = 8
 	console.log(units[4].getAbilities());
 	
-	castSkill(FIREBALL); //id =11
+	//castSkill(FIREBALL); //id =11
 
 function initialClick(event, x, y, occupant) //clicking on row 13 gives TypeError: gameObjects[initialY] is undefined
 {
@@ -452,10 +562,14 @@ function targetClick(event, x, y, occupant)
 function abilityClick(event, x)
 {
 	console.log("ability clicked");
-	console.log(currentlySelectedUnit.getAbilities()[x-1]);
+	
+	var currentSkill = currentlySelectedUnit.getAbilities()[x-1]; //this is an int
+	
+	console.log(currentSkill);
+	//console.log(currentlySelectedUnit.getAbilities()[x-1]);
 	console.log(currentlySelectedUnit.getSkillText()[x-1]);
 
-	skillMessage.text = currentlySelectedUnit.getSkillText()[x-1];
+	skillMessage.text = currentSkill.getDescription(); //currentlySelectedUnit.getSkillText()[x-1];
 	messages.push(skillMessage);
 	moveStatus = 2;
 	currentSkill = currentlySelectedUnit.getAbilities()[x-1] - FIREBALL;
@@ -477,6 +591,7 @@ function actionClick(event, x, y, occupant)
 	
 }
 
+//handles mouse clicks
 function mousedownHandler(event) 
 {
 	var x = Math.floor((event.pageX - canvas.offsetLeft)/64);
