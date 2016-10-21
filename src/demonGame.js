@@ -6,6 +6,11 @@
 var canvas = document.querySelector("canvas"); 
 var drawingSurface = canvas.getContext("2d");
 
+var game = {};
+game.projectiles = [];
+game.images = [];
+
+game.contextEnemies = canvas;
 //The game map
 var map = 
 [
@@ -31,7 +36,7 @@ var gameObjects =
 	[0,0,0,0,0,0,0,0,0,0,0], //it is technically possible for an id to be listed multiple times, 
 	[0,0,0,0,0,0,0,0,0,0,0], //resulting in a single unit being in multiple locations (like 0 for empty)
 	[0,0,0,0,0,0,0,0,0,0,0],
-	[1,2,0,0,0,0,0,0,0,5,7],
+	[1,2,0,5,0,0,0,0,0,0,7],
 	[3,4,0,0,0,0,0,0,0,6,8],
 	[0,0,0,0,0,0,0,0,0,0,0],
 	[0,0,0,0,0,0,0,0,0,0,0],
@@ -42,25 +47,6 @@ var gameObjects =
 	[0,0,0,0,0,0,0,0,0,0,0],	//this line has values for HP and 4 skill boxes
 	[0,0,0,0,0,0,0,0,0,0,0]	//this line has all 0's, prints skill description
 ];
-
-/*
-var charInfo =
-
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0],
-		//these bottom 3 lines for the info of characters
-	  [0,0,0,0,0,0,0,0,0,0,0], //this line will have all 0's, will print unit's name
-	  [0,0,0,0,0,0,0,0,0,0,0],	//this line has values for HP and 4 skill boxes
-	  [0,0,0,0,0,0,0,0,0,0,0]	//this line has all 0's, prints skill description
-*/
 
 //Map code
 
@@ -143,6 +129,7 @@ var targetY = 0;
 var currentlySelectedUnit;
 var actionX = 0;
 var actionY = 0;
+var distn = 99; //distance from unit to target (for skill ranges)
 
 //* * * * * * * * * * * *
 //* UNIT INFO CONSTANTS *
@@ -185,11 +172,24 @@ var RED_TILESHEET = 9;
 var GRE_TILESHEET = 10;
 
 var FIREBALL_DAMAGE = 2;
+var FROSTBOLT_DAMAGE = 1;
+var CHAINL_DAMAGE = 1;
+var SLASH_DAMAGE = 1;
+var ANNIHILATE_DAMAGE = 3;
+var BASH_DAMAGE = 1;
+var PA_DAMAGE = 1;
+var CA_DAMAGE = 1;
+var HS_DAMAGE = 1;
+var POISON_DAMAGE = 1;
+var SMITE_DAMAGE = 2;
+var HEAL_AMOUNT = 2;
+var THORNS_DAMAGE = 1;
 
 var TYPE_ENEMY = 1;
 var TYPE_ALLY = 2;
 
 var currentSkill = 0;
+
 
 function Unit(name, hp, abilities, tilesheetlocation, skillText, id)
 {
@@ -372,14 +372,93 @@ function Sprite() //not used, just an experiment
 		{
 		case FIREBALL:
 			console.log("fireball cast ran");
-			skills.push(new Skill("Fireball", 3, FIREBALL_DAMAGE, TYPE_ENEMY));
+			skills.push(new Skill("Fireball", 3, FIREBALL_DAMAGE, TYPE_ENEMY)); //3 is the range of fireball
+			break;
+		case FROSTBOLT:
+			skills.push(new Skill("Frostbolt", 3, FROSTBOLT_DAMAGE, TYPE_ENEMY));
+			break;
+		case CHAINL:
+			skills.push(new Skill("Chain Lightning", 3, CHAINL_DAMAGE, TYPE_ENEMY));
+			break;
+		case TELE:
+			skills.push(new Skill("Teleport", 2, 0, TYPE_ALLY));
+			break;
+		case RAGE:
+			skills.push(new Skill("Rage", 3, 0, TYPE_ALLY));
+			break;
+		case SLASH:
+			skills.push(new Skill("Slash", 1, SLASH_DAMAGE, TYPE_ENEMY));
+			break;
+		case ANNIHILATE:
+			skills.push(new Skill("Annihilate", 1, ANNIHILATE_DAMAGE, TYPE_ENEMY));
+			break;
+		case BASH:
+			skills.push(new Skill("Bash", 1, BASH_DAMAGE, TYPE_ENEMY));
+			break;
+		case PA:
+			skills.push(new Skill("Piercing Arrow", 3, PA_DAMAGE, TYPE_ENEMY));
+			break;
+		case CA:
+			skills.push(new Skill("Crippling Arrow", 3, CA_DAMAGE, TYPE_ENEMY));
+			break;
+		case HS:
+			skills.push(new Skill("Head Shot", 3, HS_DAMAGE, TYPE_ENEMY));
+			break;
+		case POISON:
+			skills.push(new Skill("Poison Arrow", 3, POISON_DAMAGE, TYPE_ENEMY));
+			break;
+		case SMITE:
+			skills.push(new Skill("Smite", 1, SMITE_DAMAGE, TYPE_ENEMY));
+			break;
+		case TAUNT:
+			skills.push(new Skill("Taunt", 2, 0, TYPE_ENEMY));
+			break;
+		case HEAL:
+			skills.push(new Skill("Heal", 3, HEAL_AMOUNT, TYPE_ALLY));
+			break;
+		case THORNS:
+			skills.push(new Skill("Thorns", 1, THORNS_DAMAGE, TYPE_ENEMY));
 			break;
 		}
 	}
 	
-	function distance () //finds distance between the selected unit and the tile you click on when a skill is selected
+	function addBullet(occupant){
+		console.log("added bullet");
+			game.projectiles.push({
+				width: 10,
+				height: 20,
+				x: 600, //occupant.x
+				//x: game.player.x + 40,
+				y: 995, //occupant.y
+				image: 0 //the 1st image imported (see the list initImages([]) under function initImages)
+				
+			});
+		}
+	
+	function initImages(paths){
+			game.requiredImages = paths.length;
+			for(i in paths){
+				var img = new Image();
+				img.src = paths[i];
+				game.images[i] = img;
+				game.images[i].onload = function(){
+					game.doneImages++;
+				}
+			}
+		}
+		
+	initImages(["bullet.png"]);
+	
+	function distance (x, y) //finds distance between the selected unit and the tile you click on when a skill is selected
 	{
-		//return Math.abs(initialX - actionX) + Math.abs(initialY - actionY);
+		
+		var dist = 99;
+		if (Math.abs(initialX - actionX) >= Math.abs(initialY - actionY))
+			dist = Math.abs(initialX - actionX) - 1; //+ Math.abs(initialY - actionY);
+		else
+			dist = Math.abs(initialY - actionY) - 1;
+		console.log("distance: " + dist);
+		return dist;
 	}
 	
 	addUnit(EMPTY); //id = 0
@@ -394,6 +473,21 @@ function Sprite() //not used, just an experiment
 	console.log(units[4].getAbilities());
 	
 	castSkill(FIREBALL); //id =11
+	castSkill(FROSTBOLT); //id =12
+	castSkill(CHAINL); //id =13
+	castSkill(TELE); //id =14
+	castSkill(RAGE); //id =15
+	castSkill(SLASH); //id =16
+	castSkill(ANNIHILATE); //id =17
+	castSkill(BASH); //id =18
+	castSkill(PA); //id =19
+	castSkill(CA); //id =20
+	castSkill(HS); //id =21
+	castSkill(POISON); //id =22
+	castSkill(SMITE); //id =23
+	castSkill(TAUNT); //id =24
+	castSkill(HEAL); //id =25
+	castSkill(THORNS); //id =26
 
 function initialClick(event, x, y, occupant) //clicking on row 13 gives TypeError: gameObjects[initialY] is undefined
 {
@@ -461,16 +555,22 @@ function abilityClick(event, x)
 	currentSkill = currentlySelectedUnit.getAbilities()[x-1] - FIREBALL;
 }
 
-function actionClick(event, x, y, occupant)
+function actionClick(event, x, y, occupant, source)
 {
 	console.log("action clicked");
 	moveStatus = 0;
 	actionX = x;
 	actionY = y;
-	if ((gameObjects[y][x]>=5 && gameObjects[y][x] <=8) && skills[currentSkill].getTargetType() === TYPE_ENEMY)
+	console.log("actionx = " + actionX);
+	console.log("actiony = " + actionY);
+	distn = distance(actionX, actionY);
+	console.log("distance = " + distn);
+	if ((gameObjects[y][x]>=5 && gameObjects[y][x] <=8) && skills[currentSkill].getTargetType() === TYPE_ENEMY && skills[currentSkill].getRange() >= distn)
 	{
-		console.log("ssss");
-
+		console.log("Decresed enemy hp");
+		console.log("Range - " + skills[currentSkill].getRange())
+		//shoot projectile
+		addBullet(occupant);
 		//decrease enemy HP by damage of skill
 		occupant.setHP(occupant.getHP()-skills[currentSkill].getDamage());
 	}
@@ -483,6 +583,9 @@ function mousedownHandler(event)
 	var y = Math.floor((event.pageY - canvas.offsetTop)/64);
 	var occupant = units[gameObjects[y][x]];
 	console.log("occupant: " + occupant);
+	console.log("source: " + source);
+	var source = 0; //the unit who has the skill that is currently being used when you click on a target
+	
 	
 	if(y === 11 && x > 0 && x < 5)
 	{
@@ -494,15 +597,20 @@ function mousedownHandler(event)
 		if(moveStatus === 0 || (gameObjects[y][x] > 0 && gameObjects[y][x] <=4))
 		{
 			currentlySelectedUnit = occupant;
+			source = units[gameObjects[y][x]];
+			console.log("source: " + source);
 			initialClick(event, x, y, occupant);
 		}
 		else if(moveStatus === 1)
 		{
+			
 			targetClick(event, x, y, occupant);
 		}
 		else if(moveStatus === 2)
 		{
-			actionClick(event, x, y, occupant);
+			console.log("occupant: " + occupant);
+			console.log("source: " + source);
+			actionClick(event, x, y, occupant, source);
 		}
 		/* else if(moveStatus ===3 && (skillRange)
 		{
@@ -533,8 +641,16 @@ function update()
 		break;
 	}
   
+  for(i in game.projectiles){
+				game.projectiles[i].y-=3;
+				if(game.projectiles[i].y <= -30){
+					game.projectiles.splice(i, 1);
+				}
+				console.log("proj y:" + game.projectiles[i].y);
+			}
 	//Render the game
 	render();
+	
 }
 
 function loadHandler()
@@ -651,6 +767,12 @@ function render()
 					sprite.width, sprite.height
 				); 
 			}
+		}
+		for(i in game.projectiles){
+			var proj = game.projectiles[i];
+			//console.log(i + " render projectile");
+			clearRect(proj.x - 30, proj.y + 10, proj.width + 80, proj.height + 10);				
+			drawImage(game.images[proj.image], proj.x, proj.y, proj.width, proj.height);
 		}
 	}
   
